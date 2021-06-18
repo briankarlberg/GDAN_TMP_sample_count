@@ -1,0 +1,52 @@
+# Matplotlib sigmoid v2
+from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
+colors = pd.read_csv('/Users/karlberb/work/tmp/v12/Fig_3/colors/TCGA_colors_n26_20210228.csv', sep = ',', names = ['Cancer', 'Hexi'])
+fig, ax = plt.subplots(figsize = (18,22), dpi = 150)
+
+counts = {}
+scores = {}
+errors = {}
+header = None
+with open("Sample_count_response_summary_2.tsv") as handle:
+    for tmp in handle:
+        row = tmp.split("\t")
+        if header is None:
+            header = row
+        else:
+            n = row[0]
+            c = json.loads(row[1])
+            s = json.loads(row[2])
+            e = json.loads(row[3])
+            counts[n] = c
+            scores[n] = s
+            errors[n] = e
+
+def sigmoid(x, a, b, c, d):
+    y = 1 / (1 + np.exp(-((x/b)-a)))
+    return y * c + d
+
+lower = [0,0.1,0.1,0.0]
+upper = [50,100,30,1.0]
+
+offset = [0,0,-.005,0,-.019,
+          0,-.008,0,0,0,
+          -.009,-.006,-.014,0,-.008,
+          -.002,0,0,-.012,0,
+          0,.005,0,-.008,-.01]
+
+for i,cohort in enumerate(counts):
+    f, _ = curve_fit(sigmoid, counts[cohort], scores[cohort], bounds=[lower,upper])
+    color_shard = colors[colors.Cancer == cohort]
+    colr = color_shard.iloc[0,1]
+    ax.plot(counts[cohort], scores[cohort], 'o', c = colr)
+    ax.text(counts[cohort][-1], scores[cohort][-1]+offset[i], cohort, fontsize = 14,va='center',
+           bbox = dict(facecolor='white', edgecolor=colr, boxstyle='round,pad=0.15'))
+    x = np.linspace(10, 250, 1000)
+    y = sigmoid(x, *f)  
+    ax.plot(x, y, '--', color=colr)
+fig.suptitle('Accuracy convergence vs. sample count', y = .87,fontsize = 17)
+ax.set_xlabel('n Samples', fontsize = 12)
+ax.set_ylabel('F1 accuracy', fontsize = 12)
+plt.savefig('power_analysis.png',dpi=180)
+plt.show()
