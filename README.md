@@ -1,4 +1,7 @@
 ### Sample size effect on accuracy experiment
+This repo is for analysis of sample size on TCGA subtype prediction.  
+
+#### archive ops notes.  
 
 Last unmerged plotting branch is "inverse power law". 
 
